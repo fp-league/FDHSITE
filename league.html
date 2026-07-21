@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League — Fortnite Drivers Hub</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#E4002B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack"><span class="ticker-item">Loading live feed…</span></div>
+</div>
+
+<div id="leagueNotFound" class="hidden">
+  <div class="wrap" style="padding-top:60px;">
+    <div class="card"><p>League not found. <a href="directory.html" class="driver-link">Back to directory →</a></p></div>
+  </div>
+</div>
+
+<div id="leagueProfileGrid" class="hidden">
+  <section style="padding-top:60px;">
+    <div class="wrap" style="max-width:640px;">
+      <div class="section-head reveal">
+        <div class="eyebrow">// league profile</div>
+        <h2 id="lpName">—</h2>
+      </div>
+      <div class="card">
+        <p id="lpDesc" style="line-height:1.6;">—</p>
+      </div>
+      <div style="margin-top:20px;">
+        <a href="#" id="lpLinkBtn" target="_blank" rel="noopener" class="btn btn-primary hidden" style="text-decoration:none; display:inline-flex; align-items:center;">Visit league →</a>
+        <a href="directory.html" class="btn btn-ghost" style="text-decoration:none; display:inline-flex; align-items:center; margin-left:10px;">Back to directory</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>Fortnite Drivers Hub — built for the grid.</footer>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">&times;</button>
+
+    <div id="registerForm">
+      <h3>Register as Driver</h3>
+      <div class="sub">Claim your callsign and get on the grid.</div>
+      <div class="field"><label>Callsign</label><input id="regCallsign" placeholder="e.g. NightApex"></div>
+      <div class="field"><label>Epic Username</label><input id="regEpic" placeholder="your_epic_username"></div>
+      <div class="field"><label>Country</label><input id="regCountry" placeholder="e.g. UK"></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="regPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="register()">Create account</button></div>
+      <div class="form-msg" id="regMsg"></div>
+      <div class="switch-mode">Already have an account? <a onclick="switchModal('login')">Log in</a></div>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <h3>Log in</h3>
+      <div class="sub">Welcome back to the grid.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="login()">Log in</button></div>
+      <div class="form-msg" id="loginMsg"></div>
+      <div class="switch-mode">New here? <a onclick="switchModal('register')">Register as driver</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

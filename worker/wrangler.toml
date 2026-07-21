@@ -1,0 +1,11 @@
+name = "fdh-admin-sync"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+DISCORD_GUILD_ID = "YOUR_DISCORD_SERVER_ID"
+ADMIN_ROLE_ID = "YOUR_ADMIN_ROLE_ID"
+ALLOWED_ORIGIN = "https://yourusername.github.io"
+
+# Secret — set this with wrangler, never put it here:
+#   wrangler secret put DISCORD_BOT_TOKEN

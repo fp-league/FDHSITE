@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Fortnite Drivers Hub</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#E4002B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack"><span class="ticker-item">Loading live feed…</span></div>
+</div>
+
+<div class="wrap" style="padding-top:50px;">
+  <div id="notAdminMsg" class="card">
+    <p>Admin access only. Log in with an admin account to see this page.</p>
+  </div>
+</div>
+<div id="adminView" class="hidden">
+  <section>
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">// admin only</div>
+        <h2>Manage promotions</h2>
+      </div>
+
+      <h3 style="font-size:16px; margin-bottom:10px;">Pending stat submissions</h3>
+      <table id="adminStatsTable">
+        <thead><tr><th>Driver</th><th>Races</th><th>Wins</th><th>Podiums</th><th>Poles</th><th>WCC</th><th>WDC</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="adminStatsEmpty" class="card hidden" style="margin-bottom:20px;"><p>No pending submissions right now.</p></div>
+
+      <h3 style="font-size:16px; margin-bottom:10px;">New league promotion</h3>
+      <div class="admin-form">
+        <input id="leagueTitle" placeholder="Title">
+        <input id="leagueDesc" placeholder="Description">
+        <button class="btn btn-primary" onclick="addPromotion('league')">Add</button>
+      </div>
+      <table id="adminLeagueTable">
+        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">New server promotion</h3>
+      <div class="admin-form">
+        <input id="serverTitle" placeholder="Title">
+        <input id="serverDesc" placeholder="Description">
+        <button class="btn btn-primary" onclick="addPromotion('server')">Add</button>
+      </div>
+      <table id="adminServerTable">
+        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin-bottom:6px;">Monthly stats upload</h3>
+      <p style="color:var(--dim); font-size:13px; margin-bottom:10px; line-height:1.5;">
+        Upload a CSV each month to bulk-update everyone's stats and points at once instead of editing drivers one by one.
+        First row must be a header row with these exact columns (in any order): <code style="color:var(--red-bright);">callsign, races, wins, podiums, poles, wcc, wdc, power_points</code>.
+        <code style="color:var(--red-bright);">power_points</code> is optional — leave it out (or leave a cell blank) to leave that driver's points untouched.
+        Matching is by callsign, so make sure the spelling matches exactly what's on the site. Rows uploaded here go straight to "approved" status — no separate review step.
+      </p>
+      <div class="admin-form">
+        <input type="file" id="bulkStatsFile" accept=".csv">
+        <button class="btn btn-primary" onclick="handleBulkStatsUpload()">Upload CSV</button>
+        <button class="btn btn-ghost" onclick="downloadCsvTemplate()">Download template</button>
+      </div>
+      <div id="bulkUploadResult" class="form-msg"></div>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Driver tiers, points &amp; Discord admin sync</h3>
+      <table id="adminDriversTable">
+        <thead><tr><th>Callsign</th><th>Epic</th><th>#</th><th>Licence</th><th>Points</th><th>Discord ID</th><th>Admin</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Set award winner</h3>
+      <div class="admin-form">
+        <select id="awardCategory" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px; font-family:'Inter',sans-serif;"></select>
+        <input id="awardMonth" placeholder="Month (e.g. 2026-07)">
+        <input id="awardWinner" placeholder="Winner callsign">
+        <button class="btn btn-primary" onclick="setAward()">Save</button>
+      </div>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">League directory</h3>
+      <div class="admin-form">
+        <input id="newLeagueName" placeholder="League name">
+        <input id="newLeagueDesc" placeholder="Short description (optional)">
+        <input id="newLeagueLink" placeholder="Link (e.g. Discord invite, optional)">
+        <button class="btn btn-primary" onclick="addLeague()">Add league</button>
+      </div>
+      <table id="adminLeaguesTable">
+        <thead><tr><th>Name</th><th>Description</th><th>Link</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Track reports</h3>
+      <div class="admin-form">
+        <input id="newTrackName" placeholder="Track name">
+        <button class="btn btn-primary" onclick="addDirectoryItem('tracks')">Add track</button>
+      </div>
+      <table id="adminTracksTable">
+        <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Track makers</h3>
+      <div class="admin-form">
+        <input id="newMakerName" placeholder="Maker name">
+        <input id="newMakerEpic" placeholder="Epic username">
+        <input id="newMakerCode" placeholder="Map code">
+        <button class="btn btn-primary" onclick="addTrackMaker()">Add maker</button>
+      </div>
+      <table id="adminMakersTable">
+        <thead><tr><th>Name</th><th>Epic</th><th>Code</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<footer>Fortnite Drivers Hub — built for the grid.</footer>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">&times;</button>
+
+    <div id="registerForm">
+      <h3>Register as Driver</h3>
+      <div class="sub">Claim your callsign and get on the grid.</div>
+      <div class="field"><label>Callsign</label><input id="regCallsign" placeholder="e.g. NightApex"></div>
+      <div class="field"><label>Epic Username</label><input id="regEpic" placeholder="your_epic_username"></div>
+      <div class="field"><label>Country</label><input id="regCountry" placeholder="e.g. UK"></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="regPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="register()">Create account</button></div>
+      <div class="form-msg" id="regMsg"></div>
+      <div class="switch-mode">Already have an account? <a onclick="switchModal('login')">Log in</a></div>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <h3>Log in</h3>
+      <div class="sub">Welcome back to the grid.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="login()">Log in</button></div>
+      <div class="form-msg" id="loginMsg"></div>
+      <div class="switch-mode">New here? <a onclick="switchModal('register')">Register as driver</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

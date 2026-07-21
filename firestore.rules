@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: is the requesting user an admin? (checks their own profile doc)
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.is_admin == true;
+    }
+
+    // ---------- PROFILES ----------
+    match /profiles/{profileId} {
+      allow read: if true; // public directory/catalogue/rankings
+      allow create: if request.auth != null && request.auth.uid == profileId;
+      // Drivers can update their own row, but never their own is_admin or discord_id
+      // (those are admin-controlled, changed only via the admin panel)
+      allow update: if request.auth != null && request.auth.uid == profileId
+        && request.resource.data.is_admin == resource.data.is_admin
+        && request.resource.data.discord_id == resource.data.discord_id;
+      // Admins can update anything on any profile
+      allow update: if isAdmin();
+      // Admins can delete a driver's profile (removes them from the site)
+      allow delete: if isAdmin();
+    }
+
+    // ---------- PROMOTIONS / LEAGUES / TRACKS / AWARDS / TRACK MAKERS ----------
+    // Same pattern for all: public read, admin-only write
+    match /promotions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /leagues/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /tracks/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /awards/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /track_makers/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------- DRIVER STATS ----------
+    match /driver_stats/{statId} {
+      // statId == the driver's own uid (one doc per driver)
+      allow read: if resource.data.status == 'approved'
+        || (request.auth != null && request.auth.uid == statId)
+        || isAdmin();
+
+      // Drivers can create/update their own doc, but it always lands back at 'pending'
+      // (can't self-approve — same protection the old Postgres policy had)
+      allow create: if request.auth != null && request.auth.uid == statId
+        && request.resource.data.status == 'pending';
+      allow update: if request.auth != null && request.auth.uid == statId
+        && request.resource.data.status == 'pending';
+
+      // Admins can set status to whatever (approve/reject)
+      allow update: if isAdmin();
+      // Admins can delete a driver's stats record (e.g. when deleting their account)
+      allow delete: if isAdmin();
+    }
+  }
+}

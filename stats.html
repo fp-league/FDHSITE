@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stats — Fortnite Drivers Hub</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#E4002B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link active">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack"><span class="ticker-item">Loading live feed…</span></div>
+</div>
+
+<section id="statsSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// approved submissions</div>
+      <h2>Driver stats</h2>
+    </div>
+    <input type="text" id="statsSearch" class="search-input" placeholder="Search drivers by callsign…" oninput="renderPublicStats()">
+    <table class="rank-table stats-table">
+      <thead><tr>
+        <th class="sortable" onclick="sortStats('callsign')">Driver</th>
+        <th class="sortable" onclick="sortStats('races')">Races</th>
+        <th class="sortable" onclick="sortStats('wins')">Wins</th>
+        <th class="sortable" onclick="sortStats('podiums')">Podiums</th>
+        <th class="sortable" onclick="sortStats('poles')">Poles</th>
+        <th class="sortable" onclick="sortStats('wcc')">WCC</th>
+        <th class="sortable" onclick="sortStats('wdc')">WDC</th>
+        <th class="sortable" onclick="sortStats('winPct')">Win %</th>
+      </tr></thead>
+      <tbody id="statsBody"></tbody>
+    </table>
+    <div id="statsEmpty" class="card hidden" style="margin-top:14px;"><p>No approved driver stats yet.</p></div>
+  </div>
+</section>
+
+<section id="myStatsSection">
+  <div class="wrap">
+    <div id="loggedOutStatsMsg" class="card">
+      <p>Log in to submit or track your own stats.</p>
+    </div>
+    <div style="max-width:520px; margin:0 auto;" id="myStatsForm" class="hidden">
+        <div class="section-head reveal" style="padding-left:0;">
+          <h3 style="font-size:20px; font-family:'Rajdhani',sans-serif; text-transform:uppercase; font-weight:700;">Your stats</h3>
+        </div>
+        <div id="myStatStatus"></div>
+        <div class="stat-form">
+          <div class="field"><label>Races</label><input type="number" id="statRaces" min="0"></div>
+          <div class="field"><label>Wins</label><input type="number" id="statWins" min="0"></div>
+          <div class="field"><label>Podiums</label><input type="number" id="statPodiums" min="0"></div>
+          <div class="field"><label>Poles</label><input type="number" id="statPoles" min="0"></div>
+          <div class="field"><label>WCC</label><input type="number" id="statWcc" min="0"></div>
+          <div class="field"><label>WDC</label><input type="number" id="statWdc" min="0"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; margin-top:14px;" onclick="submitMyStats()">Submit for approval</button>
+        <div class="form-msg" id="statMsg"></div>
+      </div>
+    </div>
+</section>
+
+<footer>Fortnite Drivers Hub — built for the grid.</footer>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">&times;</button>
+
+    <div id="registerForm">
+      <h3>Register as Driver</h3>
+      <div class="sub">Claim your callsign and get on the grid.</div>
+      <div class="field"><label>Callsign</label><input id="regCallsign" placeholder="e.g. NightApex"></div>
+      <div class="field"><label>Epic Username</label><input id="regEpic" placeholder="your_epic_username"></div>
+      <div class="field"><label>Country</label><input id="regCountry" placeholder="e.g. UK"></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="regPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="register()">Create account</button></div>
+      <div class="form-msg" id="regMsg"></div>
+      <div class="switch-mode">Already have an account? <a onclick="switchModal('login')">Log in</a></div>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <h3>Log in</h3>
+      <div class="sub">Welcome back to the grid.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="login()">Log in</button></div>
+      <div class="form-msg" id="loginMsg"></div>
+      <div class="switch-mode">New here? <a onclick="switchModal('register')">Register as driver</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
