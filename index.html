@@ -117,19 +117,14 @@
       <div class="eyebrow">// on the grid</div>
       <h2>Driver spotlight</h2>
     </div>
-    <div id="spotlightCard" class="spotlight-card hidden">
-      <div class="spotlight-photo-box">
-        <img id="spotlightAvatar" src="" alt="" style="display:none;">
-        <div class="spotlight-photo-fallback" id="spotlightPhotoFallback">?</div>
+    <div id="spotlightCarousel" class="spotlight-carousel hidden">
+      <button class="spotlight-arrow left" onclick="spotlightPrev()" aria-label="Previous driver">‹</button>
+      <div class="spotlight-viewport">
+        <div class="spotlight-track" id="spotlightTrack"></div>
       </div>
-      <div class="spotlight-info">
-        <div class="spotlight-callsign" id="spotlightCallsign">—</div>
-        <div class="spotlight-meta">
-          <span id="spotlightTier">—</span> · <span id="spotlightNumber">—</span> · <span id="spotlightCountry">—</span>
-        </div>
-        <a href="#" id="spotlightLink" class="btn btn-ghost" style="text-decoration:none; display:inline-flex; align-items:center; margin-top:14px;">View profile →</a>
-      </div>
+      <button class="spotlight-arrow right" onclick="spotlightNext()" aria-label="Next driver">›</button>
     </div>
+    <div class="spotlight-dots" id="spotlightDots"></div>
   </div>
 </section>
 
