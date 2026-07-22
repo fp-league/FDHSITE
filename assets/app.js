@@ -263,8 +263,9 @@ async function loadRankings(){
     <div class="leaderboard-row">
       <div class="lb-pos">#${i + 4}</div>
       <div class="lb-name"><a href="driver.html?id=${d.id}" class="driver-link">${d.callsign}</a><span class="num">#${String(d.driver_number).padStart(3,'0')}</span></div>
-      <div class="lb-points">${d.power_points} pts</div>
+      <div class="lb-points"><span class="cu" data-target="${d.power_points}">0</span> pts</div>
     </div>`).join('');
+  boardEl.querySelectorAll('.cu').forEach(el => countUp(el, parseInt(el.dataset.target) || 0));
 }
 
 // ---------- Driver stats (public approved table) ----------
@@ -501,17 +502,16 @@ function renderCatalogue(){
     body.innerHTML = `<tr><td colspan="6" style="color:var(--dim); text-align:center; padding:20px;">No drivers match your search.</td></tr>`;
     return;
   }
-  list.forEach((d, i) => {
-    body.innerHTML += `
+  body.innerHTML = list.map((d, i) => `
       <tr>
         <td class="rank-pos">#${i + 1}</td>
         <td><a href="driver.html?id=${d.id}" class="driver-link">${d.callsign}</a></td>
         <td>${d.country || '—'}</td>
         <td class="rank-num">${String(d.driver_number).padStart(3,'0')}</td>
         <td><span class="rank-tier">${d.tier}</span></td>
-        <td class="rank-points">${d.power_points}</td>
-      </tr>`;
-  });
+        <td class="rank-points"><span class="cu" data-target="${d.power_points}">0</span></td>
+      </tr>`).join('');
+  body.querySelectorAll('.cu').forEach(el => countUp(el, parseInt(el.dataset.target) || 0, 700));
 }
 
 // ---------- Awards ----------
@@ -984,7 +984,7 @@ async function loadDriverProfile(){
   }
   if($('dpNumber')) $('dpNumber').textContent = '#' + String(p.driver_number).padStart(3,'0');
   if($('dpCountry')) $('dpCountry').textContent = p.country || '—';
-  if($('dpPoints')) $('dpPoints').textContent = p.power_points;
+  if($('dpPoints')) countUp($('dpPoints'), p.power_points, 800);
 
   // Stats
   const statsBlock = $('dpStatsBlock');
@@ -993,13 +993,13 @@ async function loadDriverProfile(){
     statsBlock.classList.remove('hidden');
     if(noStatsMsg) noStatsMsg.classList.add('hidden');
     const winPct = s.races > 0 ? Math.round((s.wins / s.races) * 100) : 0;
-    if($('dpRaces')) $('dpRaces').textContent = s.races;
-    if($('dpWins')) $('dpWins').textContent = s.wins;
-    if($('dpPodiums')) $('dpPodiums').textContent = s.podiums;
-    if($('dpPoles')) $('dpPoles').textContent = s.poles;
-    if($('dpWcc')) $('dpWcc').textContent = s.wcc;
-    if($('dpWdc')) $('dpWdc').textContent = s.wdc;
-    if($('dpWinPct')) $('dpWinPct').textContent = winPct + '%';
+    if($('dpRaces')) countUp($('dpRaces'), s.races, 700);
+    if($('dpWins')) countUp($('dpWins'), s.wins, 700);
+    if($('dpPodiums')) countUp($('dpPodiums'), s.podiums, 700);
+    if($('dpPoles')) countUp($('dpPoles'), s.poles, 700);
+    if($('dpWcc')) countUp($('dpWcc'), s.wcc, 700);
+    if($('dpWdc')) countUp($('dpWdc'), s.wdc, 700);
+    if($('dpWinPct')) countUp($('dpWinPct'), winPct, 700, '%');
   } else {
     if(statsBlock) statsBlock.classList.add('hidden');
     if(noStatsMsg) noStatsMsg.classList.remove('hidden');
@@ -1059,48 +1059,100 @@ const revealObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
 // ---------- Count-up animation ----------
-function countUp(el, target, duration = 900){
+function countUp(el, target, duration = 900, suffix = ''){
   const start = performance.now();
   function tick(now){
     const progress = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(eased * target);
+    el.textContent = Math.round(eased * target) + suffix;
     if(progress < 1) requestAnimationFrame(tick);
-    else el.textContent = target;
+    else el.textContent = target + suffix;
   }
   requestAnimationFrame(tick);
 }
 
-// ---------- Driver spotlight (homepage) ----------
+// ---------- Driver spotlight carousel (homepage) ----------
+let spotlightDrivers = [];
+let spotlightIndex = 0;
+let spotlightTimer = null;
+
+function spotlightSlideHtml(d){
+  const initial = (d.callsign || '?').charAt(0).toUpperCase();
+  return `
+    <div class="spotlight-slide">
+      <div class="spotlight-photo-box">
+        ${d.avatar_url
+          ? `<img src="${d.avatar_url}" alt="">`
+          : `<div class="spotlight-photo-fallback">${initial}</div>`}
+      </div>
+      <div class="spotlight-info">
+        <div class="spotlight-callsign">${d.callsign}</div>
+        <div class="spotlight-meta">${d.tier} · #${String(d.driver_number).padStart(3,'0')} · ${d.country || '—'}</div>
+        <a href="driver.html?id=${d.id}" class="btn btn-ghost" style="text-decoration:none; display:inline-flex; align-items:center; margin-top:14px;">View profile →</a>
+      </div>
+    </div>`;
+}
+
 async function loadSpotlight(){
-  const card = $('spotlightCard');
-  if(!card) return;
+  const carousel = $('spotlightCarousel');
+  if(!carousel) return;
 
   const snap = await db.collection('profiles').get();
-  const drivers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  if(!drivers.length) return;
+  const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if(!all.length) return;
 
-  const pick = drivers[Math.floor(Math.random() * drivers.length)];
+  // Feature up to 5 random drivers
+  spotlightDrivers = [...all].sort(() => Math.random() - 0.5).slice(0, 5);
+  spotlightIndex = 0;
 
-  if($('spotlightCallsign')) $('spotlightCallsign').textContent = pick.callsign;
-  if($('spotlightTier')) $('spotlightTier').textContent = pick.tier;
-  if($('spotlightNumber')) $('spotlightNumber').textContent = '#' + String(pick.driver_number).padStart(3,'0');
-  if($('spotlightCountry')) $('spotlightCountry').textContent = pick.country || '—';
-  if($('spotlightLink')) $('spotlightLink').href = 'driver.html?id=' + pick.id;
+  const track = $('spotlightTrack');
+  track.innerHTML = spotlightDrivers.map(spotlightSlideHtml).join('');
 
-  const img = $('spotlightAvatar');
-  const fallback = $('spotlightPhotoFallback');
-  if(img){
-    if(pick.avatar_url){
-      img.src = pick.avatar_url; img.style.display = 'block';
-      if(fallback) fallback.style.display = 'none';
-    } else {
-      img.style.display = 'none';
-      if(fallback){ fallback.style.display = 'flex'; fallback.textContent = (pick.callsign || '?').charAt(0).toUpperCase(); }
-    }
-  }
+  const dots = $('spotlightDots');
+  dots.innerHTML = spotlightDrivers.map((_, i) =>
+    `<div class="spotlight-dot${i === 0 ? ' active' : ''}" onclick="spotlightGoTo(${i})"></div>`).join('');
 
-  card.classList.remove('hidden');
+  carousel.classList.remove('hidden');
+  updateSpotlightPosition();
+  startSpotlightAutoplay();
+}
+
+function updateSpotlightPosition(){
+  const track = $('spotlightTrack');
+  if(track) track.style.transform = `translateX(-${spotlightIndex * 100}%)`;
+
+  document.querySelectorAll('#spotlightDots .spotlight-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === spotlightIndex);
+  });
+}
+
+function spotlightNext(){
+  if(!spotlightDrivers.length) return;
+  spotlightIndex = (spotlightIndex + 1) % spotlightDrivers.length;
+  updateSpotlightPosition();
+  startSpotlightAutoplay(); // reset the timer on manual interaction
+}
+
+function spotlightPrev(){
+  if(!spotlightDrivers.length) return;
+  spotlightIndex = (spotlightIndex - 1 + spotlightDrivers.length) % spotlightDrivers.length;
+  updateSpotlightPosition();
+  startSpotlightAutoplay();
+}
+
+function spotlightGoTo(i){
+  spotlightIndex = i;
+  updateSpotlightPosition();
+  startSpotlightAutoplay();
+}
+
+function startSpotlightAutoplay(){
+  if(spotlightTimer) clearInterval(spotlightTimer);
+  if(spotlightDrivers.length <= 1) return;
+  spotlightTimer = setInterval(() => {
+    spotlightIndex = (spotlightIndex + 1) % spotlightDrivers.length;
+    updateSpotlightPosition();
+  }, 4500);
 }
 
 // ---------- Driver comparison ----------
@@ -1149,11 +1201,12 @@ async function renderComparison(){
   $('compareNameB').textContent = pB.callsign;
 
   function row(label, valA, valB, higherWins){
-    let cellA = `<td>${valA}</td>`;
-    let cellB = `<td>${valB}</td>`;
-    if(higherWins && typeof valA === 'number' && typeof valB === 'number' && valA !== valB){
-      if(valA > valB) cellA = `<td class="winner">${valA}</td>`;
-      else cellB = `<td class="winner">${valB}</td>`;
+    const isNum = typeof valA === 'number' && typeof valB === 'number';
+    let cellA = isNum ? `<td><span class="cu" data-target="${valA}">0</span></td>` : `<td>${valA}</td>`;
+    let cellB = isNum ? `<td><span class="cu" data-target="${valB}">0</span></td>` : `<td>${valB}</td>`;
+    if(higherWins && isNum && valA !== valB){
+      if(valA > valB) cellA = `<td class="winner"><span class="cu" data-target="${valA}">0</span></td>`;
+      else cellB = `<td class="winner"><span class="cu" data-target="${valB}">0</span></td>`;
     }
     return `<tr><td>${label}</td>${cellA}${cellB}</tr>`;
   }
@@ -1180,6 +1233,7 @@ async function renderComparison(){
   }
 
   $('compareBody').innerHTML = html;
+  $('compareBody').querySelectorAll('.cu').forEach(el => countUp(el, parseInt(el.dataset.target) || 0, 700));
 }
 
 // ---------- Download license card as image ----------
