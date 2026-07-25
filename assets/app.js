@@ -1254,6 +1254,29 @@ async function downloadLicenseCard(elementId, filename){
   }
 }
 
+// ---------- Hero parallax (homepage only) ----------
+(function initHeroParallax(){
+  const hero = document.querySelector('.hero');
+  if(!hero) return;
+  let ticking = false;
+
+  function update(){
+    const y = window.scrollY;
+    if(y < window.innerHeight){
+      hero.style.transform = `translateY(${y * 0.15}px)`;
+      hero.style.opacity = Math.max(1 - y / 700, 0);
+    }
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if(!ticking){
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
 // ---------- Intro lights-out animation (homepage only, once per browser session) ----------
 function runIntro(){
   const overlay = document.getElementById('introOverlay');
