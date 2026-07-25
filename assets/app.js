@@ -939,13 +939,21 @@ async function toggleTrackMaker(id, active){
 const BADGE_DEFS = [
   { id: 'first-win',    name: 'First Win',      icon: '🏆', check: s => s && s.wins >= 1 },
   { id: 'race-starter', name: 'Race Starter',   icon: '🏁', check: s => s && s.races >= 1 },
+  { id: 'hat-trick',    name: 'Hat Trick',      icon: '🎩', check: s => s && s.wins >= 3 },
   { id: 'ten-races',    name: '10 Races',       icon: '🔟', check: s => s && s.races >= 10 },
   { id: 'fifty-races',  name: '50 Races',       icon: '⚡', check: s => s && s.races >= 50 },
   { id: 'century',      name: 'Century Club',   icon: '💯', check: s => s && s.races >= 100 },
+  { id: 'veteran',      name: 'Veteran',        icon: '🛡️', check: s => s && s.races >= 200 },
   { id: 'podium-regular', name: 'Podium Regular', icon: '🥇', check: s => s && s.podiums >= 5 },
+  { id: 'podium-machine', name: 'Podium Machine', icon: '📈', check: s => s && s.podiums >= 20 },
   { id: 'pole-sitter',  name: 'Pole Sitter',    icon: '🎯', check: s => s && s.poles >= 1 },
+  { id: 'front-row',    name: 'Front Row',      icon: '🚦', check: s => s && s.poles >= 5 },
+  { id: 'consistency-king', name: 'Consistency King', icon: '📊', check: s => s && s.races >= 10 && (s.wins / s.races) >= 0.5 },
   { id: 'wdc-champion', name: 'WDC Champion',   icon: '🏅', check: s => s && s.wdc >= 1 },
   { id: 'wcc-champion', name: 'WCC Champion',   icon: '🛠️', check: s => s && s.wcc >= 1 },
+  { id: 'grand-slam',   name: 'Grand Slam',     icon: '🌟', check: s => s && s.wdc >= 1 && s.wcc >= 1 },
+  { id: 'racer-tier',   name: 'Racer Licence',  icon: '🔰', check: (s, p) => p && p.tier === 'racer' },
+  { id: 'pro-tier',     name: 'Pro Licence',    icon: '💠', check: (s, p) => p && p.tier === 'pro' },
   { id: 'elite-tier',   name: 'Elite Licence',  icon: '👑', check: (s, p) => p && p.tier === 'elite' },
 ];
 
