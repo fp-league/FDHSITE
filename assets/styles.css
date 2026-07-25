@@ -31,21 +31,23 @@
     position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.035; mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  /* Ambient drifting glow — slow, subtle, site-wide */
+  /* Cinematic diagonal light beam — site-wide, on every page */
   body::after{
     content:'';
-    position:fixed; inset:-10%; pointer-events:none; z-index:0;
-    background-image:
-      radial-gradient(circle at 15% 20%, rgba(228,0,43,0.09) 0%, transparent 32%),
-      radial-gradient(circle at 85% 70%, rgba(228,0,43,0.07) 0%, transparent 30%),
-      radial-gradient(circle at 50% 95%, rgba(255,255,255,0.03) 0%, transparent 28%);
-    background-repeat:no-repeat;
-    animation:ambient-drift 26s ease-in-out infinite alternate;
+    position:fixed; inset:-15%; pointer-events:none; z-index:0;
+    background:linear-gradient(115deg,
+      transparent 30%,
+      rgba(228,0,43,0.28) 46%,
+      rgba(255,46,68,0.55) 49.5%,
+      rgba(228,0,43,0.28) 53%,
+      transparent 70%);
+    background-size:250% 250%;
+    filter:blur(35px);
+    animation:beam-drift 14s ease-in-out infinite alternate;
   }
-  @keyframes ambient-drift{
-    0%{ transform:translate(0, 0) scale(1); }
-    50%{ transform:translate(2%, -3%) scale(1.05); }
-    100%{ transform:translate(-3%, 2%) scale(1); }
+  @keyframes beam-drift{
+    0%{ background-position:10% 90%; }
+    100%{ background-position:90% 10%; }
   }
   @media (prefers-reduced-motion: reduce){
     body::after{ animation:none; }
@@ -132,10 +134,6 @@
     content:''; position:absolute; inset:-20% -10%; z-index:0; pointer-events:none;
     background-image:repeating-linear-gradient(100deg, rgba(228,0,43,0.05) 0px, rgba(228,0,43,0.05) 2px, transparent 2px, transparent 90px);
     animation:speed-lines 6s linear infinite;
-  }
-  .hero::after{
-    content:''; position:absolute; top:-30%; left:-10%; width:75%; height:110%; z-index:0; pointer-events:none;
-    background:radial-gradient(ellipse at top left, rgba(228,0,43,0.28) 0%, rgba(228,0,43,0.08) 35%, transparent 65%);
   }
   @keyframes speed-lines{ from{ transform:translateX(0); } to{ transform:translateX(-90px); } }
   .hero .wrap{ position:relative; z-index:2; }
@@ -354,6 +352,19 @@
   .compare-table td{ text-align:center; padding:11px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:14px; }
   .compare-table td:first-child{ text-align:left; color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; }
   .compare-table td.winner{ color:var(--red-bright); font-weight:700; }
+
+  /* ---------- Admin hub ---------- */
+  .admin-hub-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+  .admin-hub-card{
+    display:block; text-decoration:none; color:var(--white);
+    background:linear-gradient(155deg, var(--tarmac-2) 0%, var(--tarmac) 100%);
+    border:1px solid var(--line); border-radius:12px; padding:22px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.04) inset;
+    transition:transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color .25s ease, box-shadow .3s ease;
+  }
+  .admin-hub-card:hover{ transform:translateY(-4px); border-color:var(--red-dim); box-shadow:0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -10px rgba(228,0,43,0.28); }
+  .admin-hub-card h3{ font-size:19px; margin-bottom:6px; color:var(--red-bright); }
+  .admin-hub-card p{ color:var(--dim); font-size:13px; line-height:1.5; }
 
   /* ---------- Driver spotlight carousel ---------- */
   .spotlight-carousel{ position:relative; display:flex; align-items:center; gap:10px; }
