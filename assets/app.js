@@ -592,7 +592,7 @@ function renderPromoTable(rows, tbody){
   });
 }
 
-async function loadAdminData(){
+async function loadAdminStatsQueue(){
   if(!$('adminStatsTable')) return;
 
   const pendingSnap = await db.collection('driver_stats').where('status', '==', 'pending').orderBy('submitted_at', 'asc').get();
@@ -622,6 +622,10 @@ async function loadAdminData(){
   } else {
     statsEmpty.classList.remove('hidden');
   }
+}
+
+async function loadAdminPromotionsMgmt(){
+  if(!$('adminLeagueTable')) return;
 
   const promoSnap = await db.collection('promotions').orderBy('created_at', 'desc').get();
   const promos = promoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -630,6 +634,10 @@ async function loadAdminData(){
 
   renderPromoTable(league, document.querySelector('#adminLeagueTable tbody'));
   renderPromoTable(server, document.querySelector('#adminServerTable tbody'));
+}
+
+async function loadAdminDriversMgmt(){
+  if(!$('adminDriversTable')) return;
 
   const driverSnap = await db.collection('profiles').orderBy('driver_number', 'asc').get();
   const drivers = driverSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -662,6 +670,10 @@ async function loadAdminData(){
         </td>
       </tr>`;
   });
+}
+
+async function loadAdminDirectoryMgmt(){
+  if(!$('adminLeaguesTable')) return;
 
   const leagueSnap = await db.collection('leagues').orderBy('name').get();
   const leagueBody = document.querySelector('#adminLeaguesTable tbody');
@@ -711,6 +723,14 @@ async function loadAdminData(){
         <td><button class="row-btn" onclick="toggleTrackMaker('${doc.id}', ${m.active})">${m.active ? 'Deactivate' : 'Activate'}</button></td>
       </tr>`;
   });
+}
+
+async function loadAdminData(){
+  // Kept for backward-compatibility — runs whichever of the four apply on this page
+  await loadAdminStatsQueue();
+  await loadAdminPromotionsMgmt();
+  await loadAdminDriversMgmt();
+  await loadAdminDirectoryMgmt();
 }
 
 async function addPromotion(type){
