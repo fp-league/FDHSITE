@@ -127,23 +127,33 @@
   .btn-danger{ background:transparent; color:var(--red); border-color:var(--red); }
 
   /* ---------- Hero ---------- */
-  .hero{ padding:90px 0 60px; position:relative; overflow:hidden; }
+  .hero{ padding:110px 0 70px; position:relative; overflow:hidden; }
   .hero::before{
     content:''; position:absolute; inset:-20% -10%; z-index:0; pointer-events:none;
     background-image:repeating-linear-gradient(100deg, rgba(228,0,43,0.05) 0px, rgba(228,0,43,0.05) 2px, transparent 2px, transparent 90px);
     animation:speed-lines 6s linear infinite;
   }
+  .hero::after{
+    content:''; position:absolute; top:-30%; left:-10%; width:75%; height:110%; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at top left, rgba(228,0,43,0.28) 0%, rgba(228,0,43,0.08) 35%, transparent 65%);
+  }
   @keyframes speed-lines{ from{ transform:translateX(0); } to{ transform:translateX(-90px); } }
   .hero .wrap{ position:relative; z-index:2; }
+  .hero-streak{
+    width:min(180px, 30vw); height:3px; margin-bottom:24px; border-radius:2px;
+    background:linear-gradient(90deg, var(--red-bright), transparent);
+  }
   .flag-divider{
     height:10px; width:100%;
     background-image: repeating-conic-gradient(var(--tarmac-2) 0% 25%, var(--asphalt) 0% 50%);
     background-size:20px 20px;
   }
   .eyebrow{ color:var(--red-bright); font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; }
-  .hero h1{ font-size:clamp(40px,7vw,76px); line-height:0.98; margin-bottom:18px; }
-  .hero h1 span{ color:var(--red); }
-  .hero p{ color:var(--dim); font-size:17px; max-width:520px; margin-bottom:30px; line-height:1.6; }
+  .hero h1{
+    font-size:clamp(52px, 11vw, 108px); line-height:0.92; margin-bottom:22px; letter-spacing:-0.01em;
+  }
+  .hero h1 span{ color:var(--red); display:block; }
+  .hero p{ color:var(--dim); font-size:18px; max-width:520px; margin-bottom:32px; line-height:1.6; }
   .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; }
 
   /* ---------- Driver License Card (signature element) ---------- */
