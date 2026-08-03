@@ -518,7 +518,8 @@ function renderCatalogue(){
 const AWARD_CATEGORIES = [
   'Driver of the Month','Rookie of the Month','Most Improved Driver','Most Consistent Driver',
   'Fastest of the Month','Map of the Month','Overtake of the Month','Comeback of the Month',
-  'League of the Month','Race of the Month','Lap of the Month'
+  'League of the Month','Race of the Month','Lap of the Month'.'Video Of The Month','Picture Of The Month','Meme Of The Month',
+  'Clip Of The Month','Edit Of The Month'
 ];
 
 // Populate the admin "Set award winner" category dropdown, if this page has one
