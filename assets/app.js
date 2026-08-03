@@ -539,10 +539,40 @@ function awardDocId(category, month){
 async function loadAwards(){
   if(!$('awardsGrid')) return;
 
-  const currentMonth = new Date().toISOString().slice(0,7);
-  const snap = await db.collection('awards').where('month', '==', currentMonth).get();
-  const awards = snap.docs.map(d => d.data());
+  // Show the most recent month that actually has awards set.
+  // (Winners for a month are typically crowned during the following month,
+  //  so we don't lock to the current calendar month.)
+  const allSnap = await db.collection('awards').get();
+  const allAwards = allSnap.docs.map(d => d.data());
+
   const grid = document.getElementById('awardsGrid');
+  const heading = document.getElementById('awardsMonthLabel');
+
+  if(!allAwards.length){
+    grid.innerHTML = AWARD_CATEGORIES.map(cat => `
+      <div class="award-card">
+        <div class="cat">${cat}</div>
+        <div class="winner empty">TBD</div>
+      </div>`).join('');
+    if(heading) heading.textContent = '';
+    return;
+  }
+
+  // Find the latest month present in the data (YYYY-MM sorts correctly as a string)
+  const latestMonth = allAwards
+    .map(a => a.month)
+    .filter(Boolean)
+    .sort()
+    .reverse()[0];
+
+  const awards = allAwards.filter(a => a.month === latestMonth);
+
+  if(heading && latestMonth){
+    const [y, m] = latestMonth.split('-');
+    const monthName = new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+    heading.textContent = monthName;
+  }
+
   grid.innerHTML = AWARD_CATEGORIES.map(cat => {
     const match = awards.find(a => a.category === cat);
     return `
@@ -900,15 +930,9 @@ async function setAward(){
   await db.collection('awards').doc(awardDocId(category, month)).set({ category, month, winner_callsign }, { merge: true });
 
   const msgEl = document.getElementById('awardMsg');
-  const currentMonth = new Date().toISOString().slice(0,7);
   if(msgEl){
-    if(month === currentMonth){
-      msgEl.className = 'form-msg ok';
-      msgEl.textContent = 'Saved — showing on the awards page now.';
-    } else {
-      msgEl.className = 'form-msg';
-      msgEl.textContent = `Saved for ${month}. Note: the public awards page only shows the current month (${currentMonth}), so this won't appear there until ${month} comes around.`;
-    }
+    msgEl.className = 'form-msg ok';
+    msgEl.textContent = 'Saved.';
   }
 
   document.getElementById('awardWinner').value = '';
