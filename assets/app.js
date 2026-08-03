@@ -518,14 +518,18 @@ function renderCatalogue(){
 const AWARD_CATEGORIES = [
   'Driver of the Month','Rookie of the Month','Most Improved Driver','Most Consistent Driver',
   'Fastest of the Month','Map of the Month','Overtake of the Month','Comeback of the Month',
-  'League of the Month','Race of the Month','Lap of the Month','Driver Of The Year','Meme of the Month',
-  'Video Of The Month','Picture Of The Month','Clip Of The Month','Edit Of The Month'
+  'League of the Month','Race of the Month','Lap of the Month'
 ];
 
 // Populate the admin "Set award winner" category dropdown, if this page has one
 const awardCategorySelect = document.getElementById('awardCategory');
 if(awardCategorySelect){
   awardCategorySelect.innerHTML = AWARD_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+// Default the month picker to the current month
+const awardMonthInput = document.getElementById('awardMonth');
+if(awardMonthInput && !awardMonthInput.value){
+  awardMonthInput.value = new Date().toISOString().slice(0,7);
 }
 
 function awardDocId(category, month){
@@ -894,7 +898,19 @@ async function setAward(){
   const winner_callsign = document.getElementById('awardWinner').value.trim();
   if(!category || !month) return;
   await db.collection('awards').doc(awardDocId(category, month)).set({ category, month, winner_callsign }, { merge: true });
-  document.getElementById('awardMonth').value = '';
+
+  const msgEl = document.getElementById('awardMsg');
+  const currentMonth = new Date().toISOString().slice(0,7);
+  if(msgEl){
+    if(month === currentMonth){
+      msgEl.className = 'form-msg ok';
+      msgEl.textContent = 'Saved — showing on the awards page now.';
+    } else {
+      msgEl.className = 'form-msg';
+      msgEl.textContent = `Saved for ${month}. Note: the public awards page only shows the current month (${currentMonth}), so this won't appear there until ${month} comes around.`;
+    }
+  }
+
   document.getElementById('awardWinner').value = '';
   loadAwards();
 }
