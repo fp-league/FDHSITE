@@ -2,7 +2,7 @@
 // Caches the static app shell so the site is installable and loads instantly on repeat visits.
 // Firebase/Firestore requests always go to the network — we never want stale driver data.
 
-const CACHE_NAME = 'fdh-shell-v1';
+const CACHE_NAME = 'fdh-shell-v2';
 const APP_SHELL = [
   'index.html',
   'rankings.html',
@@ -47,18 +47,17 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin GET requests for the app shell
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
+  // Network-first: always try to fetch the freshest version, fall back to cache only when offline.
+  // This prevents stale HTML/CSS/JS from being served after an update.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          if (response && response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
