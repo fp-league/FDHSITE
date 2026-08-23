@@ -20,7 +20,7 @@
 <nav>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
-    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="dashboard.html" class="page-link">My Driver</a></div>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
       <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
@@ -48,11 +48,10 @@
 
       <div class="admin-form" style="margin-top:24px;">
         <select id="awardCategory" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px; font-family:'Inter',sans-serif;"></select>
-        <input id="awardMonth" type="month" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px; font-family:'Inter',sans-serif;">
+        <input id="awardMonth" placeholder="Month (e.g. 2026-07)">
         <input id="awardWinner" placeholder="Winner callsign">
         <button class="btn btn-primary" onclick="setAward()">Save</button>
       </div>
-      <div class="form-msg" id="awardMsg"></div>
     </div>
   </section>
 </div>
