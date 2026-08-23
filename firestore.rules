@@ -66,5 +66,29 @@ service cloud.firestore {
       // Admins can delete a driver's stats record (e.g. when deleting their account)
       allow delete: if isAdmin();
     }
+
+    // ---------- BEST TIMES: TRACKS ----------
+    match /bt_tracks/{trackId} {
+      allow read: if true;            // public
+      allow write: if isAdmin();      // only admins create/edit/delete tracks
+    }
+
+    // ---------- BEST TIMES: SUBMITTED TIMES ----------
+    match /bt_times/{timeId} {
+      // Anyone can read approved times; the submitter and admins can read their own pending ones
+      allow read: if resource.data.status == 'approved'
+        || (request.auth != null && request.auth.uid == resource.data.uid)
+        || isAdmin();
+
+      // A logged-in driver can submit a time for themselves, and it must start as 'pending'
+      allow create: if (request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending')
+        || isAdmin();
+
+      // Only admins can approve/reject/edit or delete times
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }
