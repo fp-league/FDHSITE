@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Promotions — Fortnite Drivers Hub</title>
+<title>Admin — Drivers — Fortnite Drivers Hub</title>
 <link rel="icon" type="image/png" href="assets/logo.png">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -20,7 +20,7 @@
 <nav>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
-    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="dashboard.html" class="page-link">My Driver</a></div>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
       <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
@@ -42,29 +42,13 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div class="eyebrow">// admin only</div>
-        <h2>Manage promotions</h2>
+        <h2>Manage drivers</h2>
       </div>
       <a href="admin.html" class="driver-link">← Back to admin hub</a>
 
-      <h3 style="font-size:16px; margin:24px 0 10px;">New league promotion</h3>
-      <div class="admin-form">
-        <input id="leagueTitle" placeholder="Title">
-        <input id="leagueDesc" placeholder="Description">
-        <button class="btn btn-primary" onclick="addPromotion('league')">Add</button>
-      </div>
-      <table id="adminLeagueTable">
-        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-
-      <h3 style="font-size:16px; margin:30px 0 10px;">New server promotion</h3>
-      <div class="admin-form">
-        <input id="serverTitle" placeholder="Title">
-        <input id="serverDesc" placeholder="Description">
-        <button class="btn btn-primary" onclick="addPromotion('server')">Add</button>
-      </div>
-      <table id="adminServerTable">
-        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
+      <h3 style="font-size:16px; margin:24px 0 10px;">Driver tiers, points &amp; Discord admin sync</h3>
+      <table id="adminDriversTable">
+        <thead><tr><th>Callsign</th><th>Epic</th><th>#</th><th>Licence</th><th>Points</th><th>Discord ID</th><th>Admin</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
