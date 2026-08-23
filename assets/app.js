@@ -1374,6 +1374,9 @@ function runIntro(){
     lights.forEach(l => l.classList.remove('lit')); // lights out — and away we go
     setTimeout(hideIntro, 350);
   }, allLitTime + 550);
+
+  // Hard maximum — never stuck longer than 6 seconds no matter what
+  setTimeout(hideIntro, 6000);
 }
 
 function hideIntro(){
