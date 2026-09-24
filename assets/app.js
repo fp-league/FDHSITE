@@ -124,6 +124,7 @@ async function refreshSession(user){
   loadTrackMakers();
   loadCompareSelects();
   loadSpotlight();
+  loadCountdown();
   if(currentProfile && currentProfile.is_admin) loadAdminData();
 }
 
@@ -142,7 +143,7 @@ function renderAuthState(){
       if($('dashEpic')) $('dashEpic').textContent = currentProfile.epic_username;
       if($('dashTier')) $('dashTier').textContent = currentProfile.tier;
       if($('dashNumber')) $('dashNumber').textContent = '#' + String(currentProfile.driver_number).padStart(3,'0');
-      if($('dashCountry')) $('dashCountry').textContent = currentProfile.country || '—';
+      if($('dashCountry')) $('dashCountry').textContent = getFlag(currentProfile.country) + (currentProfile.country || '—');
       if($('dashSignature')) $('dashSignature').textContent = currentProfile.callsign;
       if($('dashAvatar')){
         const img = $('dashAvatar');
@@ -511,7 +512,7 @@ function renderCatalogue(){
       <tr>
         <td class="rank-pos">#${i + 1}</td>
         <td><a href="driver.html?id=${d.id}" class="driver-link">${d.callsign}</a></td>
-        <td>${d.country || '—'}</td>
+        <td>${getFlag(d.country)}${d.country || '—'}</td>
         <td class="rank-num">${String(d.driver_number).padStart(3,'0')}</td>
         <td><span class="rank-tier">${d.tier}</span></td>
         <td class="rank-points"><span class="cu" data-target="${d.power_points}">0</span></td>
@@ -771,6 +772,7 @@ async function loadAdminData(){
   await loadAdminPromotionsMgmt();
   await loadAdminDriversMgmt();
   await loadAdminDirectoryMgmt();
+  await loadActivityLog();
 }
 
 async function addPromotion(type){
@@ -787,11 +789,13 @@ async function addPromotion(type){
 
 async function togglePromotion(id, active){
   await db.collection('promotions').doc(id).update({ active: !active });
+  logActivity(`${active ? 'Deactivated' : 'Activated'} promotion`);
   loadAdminData(); loadPromotions();
 }
 
 async function setTier(id, tier){
   await db.collection('profiles').doc(id).update({ tier });
+  logActivity(`Set ${id} tier → ${tier}`);
   loadAdminData(); loadCatalogue(); loadRankings();
 }
 
@@ -924,6 +928,7 @@ async function deleteDriverAccount(profileId, callsign){
     return;
   }
 
+  logActivity(`Deleted driver account`);
   loadAdminData(); loadCatalogue(); loadRankings(); loadPublicStats(); loadCompareSelects();
 }
 
@@ -993,6 +998,7 @@ async function addTrackMaker(){
 
 async function reviewStat(id, status){
   await db.collection('driver_stats').doc(id).update({ status, reviewed_at: new Date().toISOString() });
+  logActivity(`Stat submission ${status}`);
   loadAdminData(); loadPublicStats();
 }
 
@@ -1057,7 +1063,7 @@ async function loadDriverProfile(){
     }
   }
   if($('dpNumber')) $('dpNumber').textContent = '#' + String(p.driver_number).padStart(3,'0');
-  if($('dpCountry')) $('dpCountry').textContent = p.country || '—';
+  if($('dpCountry')) $('dpCountry').textContent = getFlag(p.country) + (p.country || '—');
   if($('dpPoints')) countUp($('dpPoints'), p.power_points, 800);
 
   // Stats
@@ -1067,13 +1073,15 @@ async function loadDriverProfile(){
     statsBlock.classList.remove('hidden');
     if(noStatsMsg) noStatsMsg.classList.add('hidden');
     const winPct = s.races > 0 ? Math.round((s.wins / s.races) * 100) : 0;
+    const champs = (s.wdc || 0) + (s.wcc || 0);
+    if($('dpWinPct')) countUp($('dpWinPct'), winPct, 700, '%');
+    if($('dpChamps')) countUp($('dpChamps'), champs, 700);
     if($('dpRaces')) countUp($('dpRaces'), s.races, 700);
     if($('dpWins')) countUp($('dpWins'), s.wins, 700);
     if($('dpPodiums')) countUp($('dpPodiums'), s.podiums, 700);
     if($('dpPoles')) countUp($('dpPoles'), s.poles, 700);
     if($('dpWcc')) countUp($('dpWcc'), s.wcc, 700);
     if($('dpWdc')) countUp($('dpWdc'), s.wdc, 700);
-    if($('dpWinPct')) countUp($('dpWinPct'), winPct, 700, '%');
   } else {
     if(statsBlock) statsBlock.classList.add('hidden');
     if(noStatsMsg) noStatsMsg.classList.remove('hidden');
@@ -1132,6 +1140,288 @@ const revealObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.15 });
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
+// ---------- Live Timing ----------
+let ltPreviousPositions = {};
+let ltUnsubscribe = null;
+
+function loadLiveTiming(){
+  const ltLive = $('ltLive');
+  const ltOffline = $('ltOffline');
+  const ltAdminPanel = $('ltAdminPanel');
+  if(!ltLive) return;
+
+  // Show admin panel if admin
+  if(ltAdminPanel && currentProfile && currentProfile.is_admin){
+    ltAdminPanel.classList.remove('hidden');
+  }
+
+  // Real-time listener on the session document
+  if(ltUnsubscribe) ltUnsubscribe();
+  ltUnsubscribe = db.collection('config').doc('live_session')
+    .onSnapshot(snap => {
+      if(!snap.exists || !snap.data().active){
+        ltLive.classList.add('hidden');
+        ltOffline.classList.remove('hidden');
+        return;
+      }
+      ltOffline.classList.add('hidden');
+      ltLive.classList.remove('hidden');
+      const data = snap.data();
+      if($('ltSessionName')) $('ltSessionName').textContent = data.name || 'Session';
+      if($('ltSessionType')) $('ltSessionType').textContent = '// ' + (data.type || 'session');
+      if($('ltLapInfo') && data.current_lap && data.total_laps){
+        $('ltLapInfo').textContent = `Lap ${data.current_lap} / ${data.total_laps}`;
+      }
+      renderLtBoard(data.drivers || []);
+    });
+}
+
+function renderLtBoard(drivers){
+  const board = $('ltBoard');
+  if(!board) return;
+
+  const sorted = [...drivers].sort((a, b) => a.position - b.position);
+
+  board.innerHTML = sorted.map(d => {
+    const prevPos = ltPreviousPositions[d.callsign];
+    const posChanged = prevPos && prevPos !== d.position;
+    const posClass = d.position === 1 ? 'p1' : d.position === 2 ? 'p2' : d.position === 3 ? 'p3' : '';
+    const rowClass = d.position === 1 ? 'lt-leader' : '';
+    const flashClass = posChanged ? 'lt-pos-changed' : '';
+
+    ltPreviousPositions[d.callsign] = d.position;
+
+    return `
+      <div class="lt-row ${rowClass} ${flashClass}">
+        <div class="lt-pos ${posClass}">P${d.position}</div>
+        <div class="lt-name">${getFlag(d.country || '')}${d.callsign}</div>
+        <div class="lt-gap">${d.gap || '—'}</div>
+        <div class="lt-lap">L${d.lap || '—'}</div>
+        <div class="lt-status ${d.status || 'racing'}">${(d.status || 'RACING').toUpperCase()}</div>
+      </div>`;
+  }).join('');
+}
+
+async function ltStartSession(){
+  const name = $('ltAdminName').value.trim();
+  const type = $('ltAdminType').value;
+  const laps = parseInt($('ltAdminLaps').value) || 0;
+  const msg = $('ltAdminMsg');
+  if(!name){ if(msg){ msg.textContent='Enter a session name.'; msg.className='form-msg error'; } return; }
+
+  await db.collection('config').doc('live_session').set({
+    active: true, name, type,
+    total_laps: laps, current_lap: 1,
+    drivers: [], started_at: new Date().toISOString()
+  });
+  logActivity(`Started live session: ${name}`);
+  if(msg){ msg.textContent='Session started.'; msg.className='form-msg ok'; }
+}
+
+async function ltEndSession(){
+  if(!confirm('End the live session? The timing board will go offline.')) return;
+  await db.collection('config').doc('live_session').update({ active: false });
+  logActivity('Ended live session');
+  const msg = $('ltAdminMsg');
+  if(msg){ msg.textContent='Session ended.'; msg.className='form-msg ok'; }
+}
+
+async function ltUpdateDriver(){
+  const callsign = $('ltDriverCallsign').value.trim();
+  const position = parseInt($('ltDriverPos').value);
+  const gap = $('ltDriverGap').value.trim();
+  const lap = parseInt($('ltDriverLap').value) || null;
+  const status = $('ltDriverStatus').value;
+  const msg = $('ltDriverMsg');
+  if(!callsign || !position){ if(msg){ msg.textContent='Enter callsign and position.'; msg.className='form-msg error'; } return; }
+
+  const docRef = db.collection('config').doc('live_session');
+  const snap = await docRef.get();
+  if(!snap.exists){ if(msg){ msg.textContent='No active session.'; msg.className='form-msg error'; } return; }
+
+  let drivers = snap.data().drivers || [];
+  const existing = drivers.findIndex(d => d.callsign.toLowerCase() === callsign.toLowerCase());
+  const entry = { callsign, position, gap: gap || '—', lap, status };
+
+  if(existing >= 0) drivers[existing] = entry;
+  else drivers.push(entry);
+
+  await docRef.update({ drivers });
+  if(msg){ msg.textContent=`Updated ${callsign} → P${position}.`; msg.className='form-msg ok'; }
+  $('ltDriverCallsign').value = ''; $('ltDriverPos').value = ''; $('ltDriverGap').value = '';
+}
+
+async function ltSetLap(){
+  const lap = parseInt($('ltCurrentLap').value);
+  if(!lap) return;
+  await db.collection('config').doc('live_session').update({ current_lap: lap });
+}
+
+// ---------- Activity log ----------
+async function logActivity(action){
+  if(!currentProfile) return;
+  await db.collection('admin_log').add({
+    action,
+    admin: currentProfile.callsign,
+    at: new Date().toISOString()
+  });
+}
+
+async function loadActivityLog(){
+  const el = $('adminActivityLog');
+  if(!el) return;
+
+  const snap = await db.collection('admin_log').orderBy('at','desc').limit(10).get();
+  if(!snap.size){ el.innerHTML = '<p style="color:var(--dim);font-size:13px;">No activity yet.</p>'; return; }
+
+  el.innerHTML = snap.docs.map(d => {
+    const { action, admin, at } = d.data();
+    const time = at ? new Date(at).toLocaleString('en-GB',{ day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+    return `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px;">
+      <span>${action}</span>
+      <span style="color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; white-space:nowrap; margin-left:12px;">${admin} · ${time}</span>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Bulk tier update ----------
+async function bulkUpdateTier(){
+  const from = $('bulkFromTier').value;
+  const to = $('bulkToTier').value;
+  const msg = $('bulkTierMsg');
+  if(msg){ msg.className='form-msg'; msg.textContent=''; }
+  if(from === to){ if(msg){ msg.textContent='Pick two different tiers.'; msg.className='form-msg error'; } return; }
+
+  const snap = await db.collection('profiles').where('tier','==',from).get();
+  if(!snap.size){ if(msg){ msg.textContent=`No drivers currently on ${from}.`; msg.className='form-msg error'; } return; }
+
+  const confirmed = confirm(`Promote ${snap.size} ${from} driver(s) to ${to}? This can't be undone easily.`);
+  if(!confirmed) return;
+
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.update(d.ref, { tier: to }));
+  await batch.commit();
+
+  if(msg){ msg.textContent=`Done — ${snap.size} driver(s) moved from ${from} to ${to}.`; msg.className='form-msg ok'; }
+  loadAdminData(); loadCatalogue();
+}
+
+// ---------- Countdown admin ----------
+async function saveCountdown(){
+  const label = $('countdownLabelInput').value.trim();
+  const datetime = $('countdownDateInput').value;
+  const msg = $('countdownMsg');
+  if(msg){ msg.className='form-msg'; msg.textContent=''; }
+  if(!datetime){ if(msg){ msg.textContent='Pick a date and time.'; msg.className='form-msg error'; } return; }
+  await db.collection('config').doc('next_race').set({ label: label || 'NEXT RACE', datetime: new Date(datetime).toISOString() });
+  if(msg){ msg.textContent='Countdown saved.'; msg.className='form-msg ok'; }
+}
+
+async function clearCountdown(){
+  await db.collection('config').doc('next_race').delete();
+  const msg = $('countdownMsg');
+  if(msg){ msg.textContent='Countdown cleared.'; msg.className='form-msg ok'; }
+}
+
+// ---------- Countdown timer ----------
+async function loadCountdown(){
+  const section = $('countdownSection');
+  if(!section) return;
+
+  const doc = await db.collection('config').doc('next_race').get();
+  if(!doc.exists) return;
+  const { label, datetime } = doc.data();
+  if(!datetime) return;
+
+  const target = new Date(datetime).getTime();
+  if(isNaN(target)) return;
+
+  if($('countdownLabel') && label) $('countdownLabel').textContent = label || 'NEXT RACE';
+  section.classList.remove('hidden');
+
+  function tick(){
+    const now = Date.now();
+    const diff = target - now;
+    if(diff <= 0){
+      $('cdDays').textContent = '00'; $('cdHours').textContent = '00';
+      $('cdMins').textContent = '00'; $('cdSecs').textContent = '00';
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    $('cdDays').textContent = String(d).padStart(2,'0');
+    $('cdHours').textContent = String(h).padStart(2,'0');
+    $('cdMins').textContent = String(m).padStart(2,'0');
+    $('cdSecs').textContent = String(s).padStart(2,'0');
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+// ---------- Nationality flags ----------
+const FLAG_MAP = {
+  'uk': '🇬🇧', 'gb': '🇬🇧', 'england': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'usa': '🇺🇸', 'us': '🇺🇸', 'america': '🇺🇸',
+  'australia': '🇦🇺', 'aus': '🇦🇺',
+  'canada': '🇨🇦', 'can': '🇨🇦',
+  'germany': '🇩🇪', 'ger': '🇩🇪', 'deutschland': '🇩🇪',
+  'france': '🇫🇷', 'fra': '🇫🇷',
+  'spain': '🇪🇸', 'esp': '🇪🇸',
+  'italy': '🇮🇹', 'ita': '🇮🇹',
+  'netherlands': '🇳🇱', 'holland': '🇳🇱', 'ned': '🇳🇱',
+  'belgium': '🇧🇪', 'bel': '🇧🇪',
+  'portugal': '🇵🇹', 'por': '🇵🇹',
+  'brazil': '🇧🇷', 'bra': '🇧🇷',
+  'mexico': '🇲🇽', 'mex': '🇲🇽',
+  'argentina': '🇦🇷', 'arg': '🇦🇷',
+  'japan': '🇯🇵', 'jpn': '🇯🇵',
+  'china': '🇨🇳', 'chn': '🇨🇳',
+  'south korea': '🇰🇷', 'korea': '🇰🇷', 'kor': '🇰🇷',
+  'sweden': '🇸🇪', 'swe': '🇸🇪',
+  'norway': '🇳🇴', 'nor': '🇳🇴',
+  'denmark': '🇩🇰', 'den': '🇩🇰',
+  'finland': '🇫🇮', 'fin': '🇫🇮',
+  'poland': '🇵🇱', 'pol': '🇵🇱',
+  'russia': '🇷🇺', 'rus': '🇷🇺',
+  'turkey': '🇹🇷', 'tur': '🇹🇷',
+  'india': '🇮🇳', 'ind': '🇮🇳',
+  'south africa': '🇿🇦', 'rsa': '🇿🇦',
+  'new zealand': '🇳🇿', 'nzl': '🇳🇿',
+  'ireland': '🇮🇪', 'ire': '🇮🇪',
+  'austria': '🇦🇹', 'aut': '🇦🇹',
+  'switzerland': '🇨🇭', 'sui': '🇨🇭',
+  'czech republic': '🇨🇿', 'czechia': '🇨🇿', 'cze': '🇨🇿',
+  'hungary': '🇭🇺', 'hun': '🇭🇺',
+  'greece': '🇬🇷', 'gre': '🇬🇷',
+  'romania': '🇷🇴', 'rou': '🇷🇴',
+  'ukraine': '🇺🇦', 'ukr': '🇺🇦',
+  'croatia': '🇭🇷', 'cro': '🇭🇷',
+  'serbia': '🇷🇸', 'srb': '🇷🇸',
+  'thailand': '🇹🇭', 'tha': '🇹🇭',
+  'malaysia': '🇲🇾', 'mas': '🇲🇾',
+  'indonesia': '🇮🇩', 'ina': '🇮🇩',
+  'philippines': '🇵🇭', 'phi': '🇵🇭',
+  'vietnam': '🇻🇳', 'vie': '🇻🇳',
+  'uae': '🇦🇪', 'dubai': '🇦🇪',
+  'saudi arabia': '🇸🇦', 'ksa': '🇸🇦',
+  'egypt': '🇪🇬', 'egy': '🇪🇬',
+  'nigeria': '🇳🇬', 'nga': '🇳🇬',
+  'kenya': '🇰🇪', 'ken': '🇰🇪',
+  'colombia': '🇨🇴', 'col': '🇨🇴',
+  'chile': '🇨🇱', 'chi': '🇨🇱',
+  'peru': '🇵🇪', 'per': '🇵🇪',
+  'venezuela': '🇻🇪', 've': '🇻🇪',
+  'pakistan': '🇵🇰', 'pak': '🇵🇰',
+  'bangladesh': '🇧🇩', 'ban': '🇧🇩',
+};
+function getFlag(country){
+  if(!country) return '';
+  const key = country.toLowerCase().trim();
+  return FLAG_MAP[key] ? FLAG_MAP[key] + ' ' : '';
+}
+
 // ---------- Count-up animation ----------
 function countUp(el, target, duration = 900, suffix = ''){
   const start = performance.now();
@@ -1161,7 +1451,7 @@ function spotlightSlideHtml(d){
       </div>
       <div class="spotlight-info">
         <div class="spotlight-callsign">${d.callsign}</div>
-        <div class="spotlight-meta">${d.tier} · #${String(d.driver_number).padStart(3,'0')} · ${d.country || '—'}</div>
+        <div class="spotlight-meta">${d.tier} · #${String(d.driver_number).padStart(3,'0')} · ${getFlag(d.country)}${d.country || '—'}</div>
         <a href="driver.html?id=${d.id}" class="btn btn-ghost" style="text-decoration:none; display:inline-flex; align-items:center; margin-top:14px;">View profile →</a>
       </div>
     </div>`;
@@ -1291,7 +1581,7 @@ async function renderComparison(){
   let html = '';
   html += row('Licence', pA.tier, pB.tier, false);
   html += row('Driver No.', '#' + String(pA.driver_number).padStart(3,'0'), '#' + String(pB.driver_number).padStart(3,'0'), false);
-  html += row('Country', pA.country || '—', pB.country || '—', false);
+  html += row('Country', getFlag(pA.country) + (pA.country || '—'), getFlag(pB.country) + (pB.country || '—'), false);
   html += row('Power Points', pA.power_points, pB.power_points, true);
 
   if(!sA && !sB){
@@ -1308,6 +1598,19 @@ async function renderComparison(){
 
   $('compareBody').innerHTML = html;
   $('compareBody').querySelectorAll('.cu').forEach(el => countUp(el, parseInt(el.dataset.target) || 0, 700));
+}
+
+// ---------- Share driver profile ----------
+function shareDriverProfile(){
+  const url = window.location.href;
+  if(navigator.share){
+    navigator.share({ title: 'Fortnite Drivers Hub', url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = $('dpShareBtn');
+      if(btn){ const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); }
+    });
+  }
 }
 
 // ---------- Download license card as image ----------
@@ -1488,12 +1791,16 @@ async function loadTrackDetail(){
       if(empty) empty.classList.remove('hidden');
     } else {
       if(empty) empty.classList.add('hidden');
-      board.innerHTML = times.map((t, i) => `
-        <div class="leaderboard-row">
-          <div class="lb-pos">#${i + 1}</div>
-          <div class="lb-name">${t.callsign || '—'}</div>
-          <div class="lb-points mono">${formatLapTime(t.time_ms)}</div>
-        </div>`).join('');
+  board.innerHTML = times.map((t, i) => {
+    const medal = i === 0 ? 'time-purple' : i < 3 ? 'time-green' : '';
+    const pos = i === 0 ? '🟣' : i === 1 ? '🟢' : i === 2 ? '🟢' : `#${i+1}`;
+    return `
+      <div class="leaderboard-row">
+        <div class="lb-pos">${pos}</div>
+        <div class="lb-name">${t.callsign || '—'}</div>
+        <div class="lb-points mono ${medal}">${formatLapTime(t.time_ms)}</div>
+      </div>`;
+  }).join('');
     }
   }
 
@@ -1688,6 +1995,7 @@ auth.onAuthStateChanged((user) => {
   loadBestTimesTracks();
   loadTrackDetail();
   loadAdminTimes();
+  loadLiveTiming();
 });
 runIntro();
 

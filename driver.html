@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,8 +8,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#E4002B">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -22,7 +19,7 @@
 <nav>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
-    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="livetiming.html" class="page-link">Live Timing</a><a href="dashboard.html" class="page-link">My Driver</a></div>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
       <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
@@ -93,14 +90,9 @@
 
       <div style="text-align:center; margin-top:16px;">
         <button class="btn btn-ghost" onclick="downloadLicenseCard('driverLicenseCard', 'driver-license.png')" id="dpDownloadBtn">Download license</button>
+        <button class="btn btn-ghost" onclick="shareDriverProfile()" id="dpShareBtn">Share profile</button>
       </div>
 
-      <div class="dp-meta-grid">
-        <div class="dp-meta-card">
-          <div class="label">Power Points</div>
-          <div class="value" id="dpPoints">0</div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -111,14 +103,31 @@
         <h2>Stats</h2>
       </div>
       <div id="dpNoStats" class="card hidden"><p>No approved stats yet for this driver.</p></div>
-      <div id="dpStatsBlock" class="dp-stats-grid">
-        <div class="dp-stat-card"><div class="num" id="dpRaces">0</div><div class="label">Races</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpWins">0</div><div class="label">Wins</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpPodiums">0</div><div class="label">Podiums</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpPoles">0</div><div class="label">Poles</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpWcc">0</div><div class="label">WCC</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpWdc">0</div><div class="label">WDC</div></div>
-        <div class="dp-stat-card"><div class="num" id="dpWinPct">0%</div><div class="label">Win Rate</div></div>
+      <div id="dpStatsBlock">
+        <div class="season-summary-card" id="dpSeasonSummary">
+          <div class="season-summary-item">
+            <div class="season-summary-label">Win Rate</div>
+            <div class="season-summary-value" id="dpWinPct">0%</div>
+          </div>
+          <div class="season-summary-divider"></div>
+          <div class="season-summary-item">
+            <div class="season-summary-label">Championships</div>
+            <div class="season-summary-value" id="dpChamps">0</div>
+          </div>
+          <div class="season-summary-divider"></div>
+          <div class="season-summary-item">
+            <div class="season-summary-label">Power Points</div>
+            <div class="season-summary-value" id="dpPoints">0</div>
+          </div>
+        </div>
+        <div class="dp-stats-grid" style="margin-top:14px;">
+          <div class="dp-stat-card"><div class="num" id="dpRaces">0</div><div class="label">Races</div></div>
+          <div class="dp-stat-card"><div class="num" id="dpWins">0</div><div class="label">Wins</div></div>
+          <div class="dp-stat-card"><div class="num" id="dpPodiums">0</div><div class="label">Podiums</div></div>
+          <div class="dp-stat-card"><div class="num" id="dpPoles">0</div><div class="label">Poles</div></div>
+          <div class="dp-stat-card"><div class="num" id="dpWcc">0</div><div class="label">WCC</div></div>
+          <div class="dp-stat-card"><div class="num" id="dpWdc">0</div><div class="label">WDC</div></div>
+        </div>
       </div>
     </div>
   </section>

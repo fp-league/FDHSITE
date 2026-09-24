@@ -8,8 +8,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#E4002B">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -20,7 +18,7 @@
 <nav>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
-    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="livetiming.html" class="page-link">Live Timing</a><a href="dashboard.html" class="page-link">My Driver</a></div>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
       <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
@@ -45,6 +43,26 @@
         <h2>Manage drivers</h2>
       </div>
       <a href="admin.html" class="driver-link">← Back to admin hub</a>
+
+      <h3 style="font-size:16px; margin:24px 0 6px;">Bulk tier update</h3>
+      <p style="color:var(--dim); font-size:13px; margin-bottom:10px;">Promote all drivers currently on one tier to another in one click.</p>
+      <div class="admin-form">
+        <select id="bulkFromTier" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px;">
+          <option value="rookie">Rookie</option>
+          <option value="racer">Racer</option>
+          <option value="pro">Pro</option>
+          <option value="elite">Elite</option>
+        </select>
+        <span style="color:var(--dim); font-size:13px; align-self:center;">→</span>
+        <select id="bulkToTier" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px;">
+          <option value="rookie">Rookie</option>
+          <option value="racer">Racer</option>
+          <option value="pro">Pro</option>
+          <option value="elite">Elite</option>
+        </select>
+        <button class="btn btn-primary" onclick="bulkUpdateTier()">Promote all</button>
+      </div>
+      <div class="form-msg" id="bulkTierMsg"></div>
 
       <h3 style="font-size:16px; margin:24px 0 10px;">Driver tiers, points &amp; Discord admin sync</h3>
       <table id="adminDriversTable">

@@ -67,6 +67,19 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- CONFIG (countdown + live session) ----------
+    match /config/{docId} {
+      allow read: if true;           // anyone can see the countdown and live timing
+      allow write: if isAdmin();
+    }
+
+    // ---------- ADMIN ACTIVITY LOG ----------
+    match /admin_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // logs are append-only
+    }
+
     // ---------- BEST TIMES: TRACKS ----------
     match /bt_tracks/{trackId} {
       allow read: if true;            // public

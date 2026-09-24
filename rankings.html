@@ -8,8 +8,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#E4002B">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -20,7 +18,7 @@
 <nav>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
-    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link active">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="dashboard.html" class="page-link">My Driver</a></div>
+    <div class="page-links"><a href="index.html" class="page-link">Home</a><a href="rankings.html" class="page-link active">Rankings</a><a href="stats.html" class="page-link">Stats</a><a href="compare.html" class="page-link">Compare</a><a href="awards.html" class="page-link">Awards</a><a href="directory.html" class="page-link">Directory</a><a href="besttimes.html" class="page-link">Best Times</a><a href="livetiming.html" class="page-link">Live Timing</a><a href="dashboard.html" class="page-link">My Driver</a></div>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
       <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
@@ -42,6 +40,7 @@
     <div id="leaderboardList"><div class="skel skel-card" style="height:48px;"></div><div class="skel skel-card" style="height:48px;"></div><div class="skel skel-card" style="height:48px;"></div><div class="skel skel-card" style="height:48px;"></div><div class="skel skel-card" style="height:48px;"></div></div>
   </div>
 </section>
+<div class="section-divider"></div>
 
 <section id="catalogueSection">
   <div class="wrap">

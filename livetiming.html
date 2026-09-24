@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Timing — Fortnite Drivers Hub</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#E4002B">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
+    <div class="page-links">
+      <a href="index.html" class="page-link">Home</a>
+      <a href="rankings.html" class="page-link">Rankings</a>
+      <a href="stats.html" class="page-link">Stats</a>
+      <a href="compare.html" class="page-link">Compare</a>
+      <a href="awards.html" class="page-link">Awards</a>
+      <a href="directory.html" class="page-link">Directory</a>
+      <a href="besttimes.html" class="page-link">Best Times</a>
+      <a href="livetiming.html" class="page-link active">Live Timing</a>
+      <a href="dashboard.html" class="page-link">My Driver</a>
+    </div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack"><span class="ticker-item">Loading live feed…</span></div>
+</div>
+
+<section style="padding-top:50px;">
+  <div class="wrap">
+
+    <div id="ltOffline" class="lt-offline-card">
+      <div class="lt-offline-icon">🏁</div>
+      <h2>No session active</h2>
+      <p>Live timing will appear here automatically when a race or qualifying session begins.</p>
+    </div>
+
+    <div id="ltLive" class="hidden">
+      <div class="lt-header">
+        <div>
+          <div class="eyebrow" id="ltSessionType">// session</div>
+          <h2 id="ltSessionName" style="margin-bottom:4px;">—</h2>
+          <div class="lt-lap-info">
+            <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+            <span id="ltLapInfo" style="color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:12px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lt-board" id="ltBoard"></div>
+    </div>
+
+    <!-- Admin controls (hidden for non-admins) -->
+    <div id="ltAdminPanel" class="hidden" style="margin-top:40px;">
+      <div class="section-head reveal">
+        <div class="eyebrow">// admin only</div>
+        <h2>Session control</h2>
+      </div>
+
+      <div class="admin-form" style="flex-wrap:wrap; margin-bottom:20px;">
+        <input id="ltAdminName" placeholder="Session name (e.g. Round 4 — Qualifying)">
+        <select id="ltAdminType" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px;">
+          <option value="qualifying">Qualifying</option>
+          <option value="race">Race</option>
+          <option value="practice">Practice</option>
+        </select>
+        <input id="ltAdminLaps" type="number" placeholder="Total laps" style="width:100px;">
+        <button class="btn btn-primary" onclick="ltStartSession()">Start session</button>
+        <button class="btn btn-ghost" onclick="ltEndSession()">End session</button>
+      </div>
+      <div class="form-msg" id="ltAdminMsg"></div>
+
+      <h3 style="font-size:16px; margin:20px 0 10px;">Update driver position</h3>
+      <div class="admin-form" style="flex-wrap:wrap;">
+        <input id="ltDriverCallsign" placeholder="Driver callsign">
+        <input id="ltDriverPos" type="number" placeholder="Position" style="width:80px;">
+        <input id="ltDriverGap" placeholder="Gap (e.g. +1.234 or leader)">
+        <input id="ltDriverLap" type="number" placeholder="Lap no." style="width:80px;">
+        <select id="ltDriverStatus" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:13px;">
+          <option value="racing">Racing</option>
+          <option value="pitted">Pitted</option>
+          <option value="out">Out</option>
+          <option value="safety">SC</option>
+        </select>
+        <button class="btn btn-primary" onclick="ltUpdateDriver()">Update</button>
+      </div>
+      <div class="form-msg" id="ltDriverMsg"></div>
+
+      <h3 style="font-size:16px; margin:20px 0 10px;">Set current lap</h3>
+      <div class="admin-form">
+        <input id="ltCurrentLap" type="number" placeholder="Current lap">
+        <button class="btn btn-ghost" onclick="ltSetLap()">Set lap</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>Fortnite Drivers Hub — built for the grid.</footer>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">&times;</button>
+    <div id="registerForm">
+      <h3>Register as Driver</h3>
+      <div class="sub">Claim your callsign and get on the grid.</div>
+      <div class="field"><label>Callsign</label><input id="regCallsign" placeholder="e.g. NightApex"></div>
+      <div class="field"><label>Epic Username</label><input id="regEpic" placeholder="your_epic_username"></div>
+      <div class="field"><label>Country</label><input id="regCountry" placeholder="e.g. UK"></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="regPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="register()">Create account</button></div>
+      <div class="form-msg" id="regMsg"></div>
+      <div class="switch-mode">Already have an account? <a onclick="switchModal('login')">Log in</a></div>
+    </div>
+    <div id="loginForm" class="hidden">
+      <h3>Log in</h3>
+      <div class="sub">Welcome back to the grid.</div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="login()">Log in</button></div>
+      <div class="form-msg" id="loginMsg"></div>
+      <div class="switch-mode">New here? <a onclick="switchModal('register')">Register as driver</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
