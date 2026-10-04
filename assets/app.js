@@ -574,9 +574,19 @@ async function loadAwards(){
   const awards = allAwards.filter(a => a.month === latestMonth);
 
   if(heading && latestMonth){
-    const [y, m] = latestMonth.split('-');
-    const monthName = new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' });
-    heading.textContent = monthName;
+    try{
+      const parts = String(latestMonth).split('-');
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]);
+      if(!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12){
+        const monthName = new Date(y, m - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+        heading.textContent = monthName;
+      } else {
+        heading.textContent = latestMonth;
+      }
+    } catch(e){
+      heading.textContent = latestMonth;
+    }
   }
 
   grid.innerHTML = AWARD_CATEGORIES.map(cat => {
@@ -1313,7 +1323,9 @@ async function saveCountdown(){
   const msg = $('countdownMsg');
   if(msg){ msg.className='form-msg'; msg.textContent=''; }
   if(!datetime){ if(msg){ msg.textContent='Pick a date and time.'; msg.className='form-msg error'; } return; }
-  await db.collection('config').doc('next_race').set({ label: label || 'NEXT RACE', datetime: new Date(datetime).toISOString() });
+  // datetime-local gives "2026-10-05T14:30" — store as ISO string with seconds appended
+  const isoDatetime = datetime.length === 16 ? datetime + ':00' : datetime;
+  await db.collection('config').doc('next_race').set({ label: label || 'NEXT RACE', datetime: new Date(isoDatetime).toISOString() });
   if(msg){ msg.textContent='Countdown saved.'; msg.className='form-msg ok'; }
 }
 
@@ -1333,8 +1345,10 @@ async function loadCountdown(){
   const { label, datetime } = doc.data();
   if(!datetime) return;
 
-  const target = new Date(datetime).getTime();
-  if(isNaN(target)) return;
+  // Parse the stored ISO string safely
+  let target;
+  try { target = new Date(datetime).getTime(); } catch(e){ return; }
+  if(!target || isNaN(target)) return;
 
   if($('countdownLabel') && label) $('countdownLabel').textContent = label || 'NEXT RACE';
   section.classList.remove('hidden');
